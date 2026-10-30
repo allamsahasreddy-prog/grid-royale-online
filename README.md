@@ -54,3 +54,5 @@ A free Render web service is useful for testing, but it can spin down after 15 m
 - Online play does not require account registration. Use a nickname only, not personal or sensitive information.
 
 For a larger public launch, the next engineering step would be persistent room storage and a shared Socket.IO adapter (for example Redis) so rooms survive server restarts and can span multiple server instances.
+## webpage
+you can visit the web page on https://grid-royale-online.onrender.com/
