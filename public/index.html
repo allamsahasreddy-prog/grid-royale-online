@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1020">
+<title>Grid Royale — Ultimate Tic Tac Toe</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #090e1c;
+    --bg-glow: rgba(95, 89, 255, .20);
+    --panel: rgba(19, 27, 49, .86);
+    --panel-strong: #141d34;
+    --panel-soft: rgba(255,255,255,.045);
+    --text: #edf2ff;
+    --muted: #98a5c2;
+    --line: rgba(170,190,255,.13);
+    --accent: #8b7cff;
+    --accent-2: #36d9c4;
+    --x: #67a8ff;
+    --o: #ff8cba;
+    --success: #55dfb2;
+    --warning: #ffc875;
+    --danger: #ff708c;
+    --cell: rgba(255,255,255,.055);
+    --cell-hover: rgba(139,124,255,.16);
+    --shadow: 0 22px 70px rgba(0,0,0,.28);
+    --radius: 22px;
+    --transition: 180ms ease;
+  }
+  body[data-theme="light"] {
+    color-scheme: light;
+    --bg: #eef2ff;
+    --bg-glow: rgba(105,116,255,.17);
+    --panel: rgba(255,255,255,.88);
+    --panel-strong: #ffffff;
+    --panel-soft: rgba(43,57,100,.045);
+    --text: #1d2742;
+    --muted: #65718e;
+    --line: rgba(51,67,112,.13);
+    --accent: #6258e8;
+    --accent-2: #079e91;
+    --x: #2678e8;
+    --o: #d94b88;
+    --cell: rgba(55,72,120,.055);
+    --cell-hover: rgba(98,88,232,.12);
+    --shadow: 0 22px 70px rgba(56,69,120,.13);
+  }
+  body[data-theme="neon"] {
+    --bg: #070b12;
+    --bg-glow: rgba(0,255,190,.13);
+    --panel: rgba(9,23,28,.91);
+    --panel-strong: #0c1a20;
+    --accent: #39f5c7;
+    --accent-2: #b6ff4b;
+    --x: #52e5ff;
+    --o: #ff68db;
+    --cell-hover: rgba(57,245,199,.12);
+  }
+  body[data-theme="nature"] {
+    --bg: #0c1713;
+    --bg-glow: rgba(73,185,119,.16);
+    --panel: rgba(20,39,30,.91);
+    --panel-strong: #172c22;
+    --accent: #79d69b;
+    --accent-2: #d0d985;
+    --x: #7ac9ff;
+    --o: #ffb67e;
+    --cell-hover: rgba(121,214,155,.13);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { min-width: 320px; scroll-behavior: smooth; }
+  body {
+    margin: 0; min-height: 100vh; padding: 24px;
+    color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: radial-gradient(900px 600px at 12% -8%, var(--bg-glow), transparent 65%),
+                radial-gradient(700px 500px at 100% 15%, rgba(50,190,190,.08), transparent 65%), var(--bg);
+    transition: background var(--transition), color var(--transition);
+  }
+  button, input, select { font: inherit; }
+  button { color: inherit; }
+  .app { width: min(1320px, 100%); margin: 0 auto; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
+  .brand { display:flex; align-items:center; gap:13px; min-width:0; }
+  .brand-mark { width:48px; height:48px; display:grid; place-items:center; border-radius:15px; font-weight:900; font-size:22px; letter-spacing:-3px; color:#fff; background:linear-gradient(135deg,var(--accent),#4b9bfa); box-shadow:0 10px 28px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .brand h1 { margin:0; font-size:clamp(20px,3vw,28px); letter-spacing:-.8px; }
+  .brand p { margin:3px 0 0; color:var(--muted); font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .top-actions { display:flex; gap:9px; flex-wrap:wrap; justify-content:flex-end; }
+  .btn, .select, .name-input { border:1px solid var(--line); border-radius:12px; background:var(--panel-soft); color:var(--text); transition:transform var(--transition), background var(--transition), border var(--transition); }
+  .btn { min-height:42px; padding:9px 14px; cursor:pointer; font-weight:700; font-size:13px; }
+  .btn:hover { transform:translateY(-1px); border-color:color-mix(in srgb,var(--accent) 55%,var(--line)); background:var(--cell-hover); }
+  .btn:active { transform:translateY(0) scale(.98); }
+  .btn.primary { border-color:transparent; color:#fff; background:linear-gradient(135deg,var(--accent),#5b7dff); box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 22%,transparent); }
+  .btn.primary:hover { filter:brightness(1.08); }
+  .btn.active-toggle { color:var(--accent-2); border-color:color-mix(in srgb,var(--accent-2) 48%,var(--line)); }
+  .settings { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) minmax(180px,1.2fr) minmax(180px,1.2fr); gap:12px; padding:15px; margin-bottom:18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); backdrop-filter:blur(16px); }
+  .field { min-width:0; display:flex; flex-direction:column; gap:7px; }
+  .field label { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .select, .name-input { width:100%; height:42px; padding:0 12px; outline:none; }
+  .select:focus, .name-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+  .select option { background:var(--panel-strong); color:var(--text); }
+  .computer-only.hidden { display:none; }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:18px; align-items:start; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); backdrop-filter:blur(16px); }
+  .game-panel { padding:clamp(14px,2.5vw,24px); min-width:0; overflow:hidden; }
+  .game-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; }
+  .eyebrow { margin:0 0 5px; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+  .game-heading h2 { margin:0; font-size:clamp(19px,3vw,25px); letter-spacing:-.6px; }
+  .mode-pill { border:1px solid var(--line); border-radius:999px; padding:7px 11px; color:var(--accent-2); background:var(--panel-soft); font-size:11px; font-weight:800; white-space:nowrap; }
+  .turn-strip { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:13px 15px; margin-bottom:18px; border:1px solid var(--line); border-radius:15px; background:var(--panel-soft); }
+  .turn-main { display:flex; align-items:center; gap:10px; min-width:0; }
+  .turn-symbol { width:35px; height:35px; flex:0 0 35px; border-radius:11px; display:grid; place-items:center; font-size:19px; font-weight:900; background:color-mix(in srgb,var(--accent) 15%,transparent); }
+  .turn-symbol.x { color:var(--x); background:color-mix(in srgb,var(--x) 13%,transparent); }
+  .turn-symbol.o { color:var(--o); background:color-mix(in srgb,var(--o) 13%,transparent); }
+  .turn-text { min-width:0; }
+  .turn-text strong { display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .turn-text span { color:var(--muted); font-size:11px; }
+  .turn-hint { color:var(--muted); text-align:right; font-size:11px; line-height:1.45; }
+  .player-strip { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:17px; }
+  .player-card { display:flex; align-items:center; gap:10px; padding:10px 12px; min-width:0; border:1px solid var(--line); border-radius:14px; background:var(--panel-soft); transition:border var(--transition),transform var(--transition); }
+  .player-card.active { border-color:color-mix(in srgb,var(--accent) 65%,var(--line)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent); transform:translateY(-1px); }
+  .player-token { width:34px;height:34px;flex:0 0 34px;border-radius:11px;display:grid;place-items:center;font-size:19px;font-weight:900;background:color-mix(in srgb,var(--x) 15%,transparent);color:var(--x); }
+  .player-token.o { color:var(--o); background:color-mix(in srgb,var(--o) 15%,transparent); }
+  .player-info { min-width:0; }
+  .player-info strong { display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .player-info small { color:var(--muted);font-size:10px; }
+  .board-wrap { display:flex; justify-content:center; align-items:center; width:100%; padding:clamp(4px,2vw,18px) 0 16px; }
+  .normal-board { width:min(100%,510px); aspect-ratio:1; display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(7px,1.3vw,12px); }
+  .cell { appearance:none; border:1px solid var(--line); border-radius:15px; background:var(--cell); color:var(--text); display:grid; place-items:center; min-width:0; min-height:0; cursor:pointer; font-size:clamp(36px,8vw,76px); font-weight:900; line-height:1; transition:background var(--transition),border var(--transition),transform var(--transition),box-shadow var(--transition); }
+  .cell:focus-visible { outline:3px solid var(--accent-2); outline-offset:2px; z-index:2; }
+  .cell:not(:disabled):hover { background:var(--cell-hover); border-color:color-mix(in srgb,var(--accent) 65%,var(--line)); transform:translateY(-2px); }
+  .cell:disabled { cursor:default; }
+  .cell.mark-x { color:var(--x); text-shadow:0 0 26px color-mix(in srgb,var(--x) 35%,transparent); }
+  .cell.mark-o { color:var(--o); text-shadow:0 0 26px color-mix(in srgb,var(--o) 35%,transparent); }
+  .cell.winning { background:color-mix(in srgb,var(--success) 18%,var(--cell)); border-color:var(--success); box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--success) 35%,transparent),0 0 24px color-mix(in srgb,var(--success) 15%,transparent); animation:winPulse 850ms ease-in-out infinite alternate; }
+  @keyframes winPulse { from { box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--success) 20%,transparent); } to { box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--success) 52%,transparent),0 0 22px color-mix(in srgb,var(--success) 24%,transparent); } }
+  .cell.just-played { animation:pop 240ms ease-out; }
+  @keyframes pop { 0%{transform:scale(.78)} 75%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  .ultimate-board { width:min(100%,650px); aspect-ratio:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(5px,1.2vw,11px); }
+  .mini-board { position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(3px,.55vw,6px); padding:clamp(4px,.8vw,8px); min-width:0; min-height:0; border:1px solid var(--line); border-radius:12px; background:var(--panel-soft); transition:border var(--transition),background var(--transition),opacity var(--transition); }
+  .mini-board.active-mini { border-color:var(--accent-2); background:color-mix(in srgb,var(--accent-2) 8%,var(--panel-soft)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-2) 28%,transparent),0 0 16px color-mix(in srgb,var(--accent-2) 10%,transparent); }
+  .mini-board.inactive-mini { opacity:.65; }
+  .mini-board .cell { border-radius:7px; font-size:clamp(13px,3.2vw,28px); }
+  .mini-board.won-board { border-color:color-mix(in srgb,var(--success) 75%,var(--line)); }
+  .mini-cover { position:absolute; inset:0; z-index:3; display:grid; place-items:center; border-radius:11px; background:color-mix(in srgb,var(--bg) 42%,transparent); backdrop-filter:blur(2px); font-size:clamp(25px,6vw,54px); font-weight:950; color:var(--success); text-shadow:0 4px 22px rgba(0,0,0,.35); pointer-events:none; }
+  .mini-cover.draw { color:var(--muted); font-size:clamp(10px,2vw,16px); letter-spacing:.09em; text-transform:uppercase; }
+  .board-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:13px; border-top:1px solid var(--line); }
+  .board-tip { color:var(--muted); font-size:11px; line-height:1.5; }
+  .board-buttons { display:flex; gap:8px; }
+  .board-buttons .btn { min-height:38px; padding:8px 12px; font-size:12px; }
+  .side { display:grid; gap:16px; }
+  .side-panel { padding:17px; }
+  .side-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:14px; }
+  .side-title h3 { margin:0; font-size:14px; letter-spacing:-.2px; }
+  .side-title span { color:var(--muted); font-size:10px; }
+  .score-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .score-box { padding:12px 7px; text-align:center; border:1px solid var(--line); border-radius:13px; background:var(--panel-soft); }
+  .score-box strong { display:block; font-size:24px; letter-spacing:-1px; }
+  .score-box small { color:var(--muted); font-size:10px; }
+  .score-box.x strong { color:var(--x); }
+  .score-box.o strong { color:var(--o); }
+  .score-box.draw strong { color:var(--muted); }
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .stat { padding:11px; border-radius:12px; background:var(--panel-soft); border:1px solid var(--line); }
+  .stat small { display:block; color:var(--muted); font-size:10px; margin-bottom:5px; }
+  .stat strong { font-size:19px; letter-spacing:-.5px; }
+  .balance-labels { display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin:14px 0 7px; }
+  .balance-track { height:9px; overflow:hidden; border-radius:999px; background:color-mix(in srgb,var(--o) 45%,var(--x)); }
+  .balance-fill { height:100%; width:50%; border-radius:999px; background:var(--x); transition:width 300ms ease; }
+  .balance-caption { color:var(--muted); font-size:10px; margin-top:8px; line-height:1.45; }
+  .history-list { display:grid; gap:8px; max-height:225px; overflow:auto; padding-right:3px; }
+  .history-item { padding:10px 11px; border:1px solid var(--line); border-radius:12px; background:var(--panel-soft); }
+  .history-item strong { display:block; font-size:11px; margin-bottom:3px; }
+  .history-item small { display:block; color:var(--muted); font-size:10px; line-height:1.45; }
+  .empty-state { color:var(--muted); font-size:11px; line-height:1.5; padding:8px 0; }
+  .howto { display:grid; gap:9px; color:var(--muted); font-size:11px; line-height:1.55; }
+  .howto strong { color:var(--text); }
+  .keyboard { display:flex; flex-wrap:wrap; gap:6px; margin-top:3px; }
+  kbd { border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:3px 6px; color:var(--muted); background:var(--panel-soft); font:10px ui-monospace,monospace; }
+  .toast { position:fixed; z-index:20; bottom:22px; left:50%; transform:translate(-50%,20px); opacity:0; pointer-events:none; padding:11px 16px; border:1px solid var(--line); border-radius:12px; color:var(--text); background:var(--panel-strong); box-shadow:var(--shadow); font-size:12px; transition:all 220ms ease; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  .confetti { position:fixed; z-index:30; top:-12px; width:8px; height:13px; border-radius:2px; pointer-events:none; animation:confettiFall var(--fall,2.3s) linear forwards; }
+  @keyframes confettiFall { to { transform:translate3d(var(--drift,0px),110vh,0) rotate(720deg); opacity:.85; } }
+  .footer-note { text-align:center; color:var(--muted); font-size:10px; margin:20px 0 5px; }
+  @media (max-width:1050px) { .settings { grid-template-columns:repeat(3,minmax(0,1fr)); } .layout { grid-template-columns:minmax(0,1fr) 285px; } }
+  @media (max-width:800px) { body { padding:15px; } .layout { grid-template-columns:1fr; } .side { grid-template-columns:repeat(2,minmax(0,1fr)); } .side-panel:last-child { grid-column:1/-1; } }
+  @media (max-width:560px) {
+    body { padding:10px; }
+    .topbar { align-items:flex-start; }
+    .brand-mark { width:42px;height:42px;border-radius:13px; }
+    .brand p { font-size:9px; }
+    .top-actions { gap:6px; }
+    .top-actions .btn { min-height:38px;padding:7px 9px;font-size:11px; }
+    .settings { grid-template-columns:repeat(2,minmax(0,1fr)); padding:11px; gap:10px; border-radius:17px; }
+    .settings .field:nth-child(5),.settings .field:nth-child(6) { grid-column:span 1; }
+    .game-panel { padding:13px; border-radius:18px; }
+    .turn-strip { padding:10px; }
+    .turn-hint { max-width:110px; }
+    .player-card { padding:8px; gap:7px; }
+    .player-info strong { font-size:11px; }
+    .ultimate-board { gap:4px; }
+    .mini-board { gap:2px; padding:3px; border-radius:8px; }
+    .mini-board .cell { border-radius:5px; }
+    .side { grid-template-columns:1fr; }
+    .side-panel:last-child { grid-column:auto; }
+    .board-footer { align-items:flex-start; }
+  }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }
+
+  /* Landing page and online room lobby */
+  .home-screen { width:min(1180px,100%); margin:0 auto; padding:clamp(16px,3vw,34px) 0 26px; }
+  .home-nav { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:clamp(28px,5vw,58px); }
+  .home-brand { display:flex; align-items:center; gap:12px; }
+  .home-brand-mark { width:48px;height:48px;display:grid;place-items:center;border-radius:16px;font-weight:950;font-size:21px;letter-spacing:-3px;color:#fff;background:linear-gradient(135deg,var(--accent),#4b9bfa);box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 28%,transparent); }
+  .home-brand strong { display:block;font-size:19px;letter-spacing:-.6px; }
+  .home-brand small { display:block;color:var(--muted);font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-top:3px; }
+  .home-nav-actions { display:flex;align-items:center;gap:9px; }
+  .home-nav-actions .select { width:auto;min-width:130px; }
+  .hero { display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:clamp(22px,4vw,52px);align-items:center;margin-bottom:26px; }
+  .hero-copy { padding:clamp(4px,1vw,12px) 0; }
+  .hero-kicker { display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel-soft);color:var(--accent-2);font-size:10px;font-weight:850;letter-spacing:.14em;text-transform:uppercase; }
+  .pulse-dot { width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 5px color-mix(in srgb,var(--success) 14%,transparent); }
+  .hero h2 { margin:20px 0 14px;max-width:680px;font-size:clamp(43px,7.2vw,82px);line-height:.98;letter-spacing:-.065em;font-weight:900; }
+  .hero h2 span { color:var(--accent-2);text-shadow:0 8px 34px color-mix(in srgb,var(--accent-2) 18%,transparent); }
+  .hero-copy > p { color:var(--muted);max-width:570px;font-size:clamp(14px,1.5vw,17px);line-height:1.75;margin:0 0 23px; }
+  .hero-points { display:flex;flex-wrap:wrap;gap:9px 16px;color:var(--muted);font-size:11px; }
+  .hero-points span { display:flex;align-items:center;gap:6px; }
+  .hero-points b { color:var(--success);font-size:14px; }
+  .lobby-card { position:relative;overflow:hidden;padding:clamp(18px,2.5vw,26px);border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 96%,var(--accent) 4%),var(--panel-strong));box-shadow:var(--shadow); }
+  .lobby-card:before { content:"";position:absolute;width:190px;height:190px;right:-80px;top:-95px;border-radius:50%;background:color-mix(in srgb,var(--accent) 18%,transparent);filter:blur(3px);pointer-events:none; }
+  .lobby-card > * { position:relative; }
+  .lobby-head { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:19px; }
+  .lobby-head h3 { margin:0;font-size:19px;letter-spacing:-.5px; }
+  .lobby-head small { color:var(--muted);font-size:10px; }
+  .online-pill { padding:6px 9px;border:1px solid color-mix(in srgb,var(--success) 35%,var(--line));border-radius:999px;color:var(--success);background:color-mix(in srgb,var(--success) 9%,transparent);font-size:9px;font-weight:900;letter-spacing:.11em; }
+  .lobby-field { display:grid;gap:7px;margin-bottom:13px; }
+  .lobby-field label { color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em; }
+  .lobby-field input { width:100%;height:46px;padding:0 13px;border:1px solid var(--line);border-radius:12px;background:var(--panel-soft);color:var(--text);outline:none; }
+  .lobby-field input:focus { border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent); }
+  .create-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0; }
+  .create-choice { min-height:104px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--panel-soft);cursor:pointer;text-align:left;transition:transform var(--transition),border var(--transition),background var(--transition); }
+  .create-choice:hover { transform:translateY(-2px);border-color:var(--accent);background:var(--cell-hover); }
+  .create-choice .choice-icon { font-size:23px; }
+  .create-choice strong { display:block;font-size:12px; }
+  .create-choice small { display:block;color:var(--muted);font-size:10px;margin-top:3px; }
+  .join-row { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px; }
+  .code-input { text-transform:uppercase;letter-spacing:.19em;font-weight:850;text-align:center; }
+  .divider-label { display:flex;align-items:center;gap:12px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin:17px 0; }
+  .divider-label:before,.divider-label:after { content:"";height:1px;flex:1;background:var(--line); }
+  .home-status { min-height:18px;margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.5; }
+  .offline-row { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px; }
+  .offline-card { display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 17px;border:1px solid var(--line);border-radius:17px;background:var(--panel);box-shadow:var(--shadow); }
+  .offline-card strong { display:block;font-size:12px; }
+  .offline-card small { color:var(--muted);font-size:10px; }
+  .offline-card .btn { white-space:nowrap; }
+  .feature-row { display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:14px; }
+  .feature-card { padding:15px 16px;border:1px solid var(--line);border-radius:16px;background:var(--panel-soft); }
+  .feature-card span { display:block;font-size:19px;margin-bottom:8px; }
+  .feature-card strong { display:block;font-size:11px;margin-bottom:4px; }
+  .feature-card small { color:var(--muted);font-size:10px;line-height:1.5; }
+  .home-foot { display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:24px;color:var(--muted);font-size:10px; }
+  .online-bar { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:-5px 0 16px;border:1px solid color-mix(in srgb,var(--success) 30%,var(--line));border-radius:15px;background:color-mix(in srgb,var(--success) 6%,var(--panel)); }
+  .online-bar-main { display:flex;align-items:center;gap:10px;min-width:0; }
+  .online-bar-main strong { display:block;font-size:12px; }
+  .online-bar-main small { display:block;color:var(--muted);font-size:10px;margin-top:2px; }
+  .room-code-chip { border:1px dashed color-mix(in srgb,var(--accent-2) 50%,var(--line));border-radius:9px;padding:7px 10px;font:900 13px ui-monospace,monospace;letter-spacing:.16em;color:var(--accent-2);background:var(--panel-soft); }
+  .online-bar-actions { display:flex;gap:7px;align-items:center;flex-wrap:wrap; }
+  .online-bar .btn { min-height:35px;padding:7px 10px;font-size:11px; }
+  .btn:disabled { opacity:.42;cursor:not-allowed;transform:none; }
+  @media(max-width:850px) { .hero { grid-template-columns:1fr; }.hero-copy { max-width:740px; }.lobby-card { max-width:620px;width:100%; }.home-nav { margin-bottom:32px; } }
+  @media(max-width:560px) { .home-screen { padding-top:12px; }.home-nav { align-items:flex-start; }.home-brand-mark { width:42px;height:42px; }.home-brand strong { font-size:17px; }.home-nav-actions .select { min-width:105px;height:38px;font-size:11px; }.hero h2 { font-size:clamp(43px,13vw,65px); }.offline-row { grid-template-columns:1fr; }.feature-row { grid-template-columns:1fr; }.offline-card { padding:12px; }.lobby-card { border-radius:20px; }.online-bar { align-items:flex-start; }.online-bar-actions { width:100%; }.online-bar-actions .btn { flex:1; } }
+
+</style>
+</head>
+<body data-theme="dark">
+
+<section class="home-screen" id="homeScreen">
+  <nav class="home-nav" aria-label="Main navigation">
+    <div class="home-brand"><div class="home-brand-mark" aria-hidden="true">X<span style="color:#ffd1e7">O</span></div><div><strong>Grid Royale</strong><small>Think ahead. Own the grid.</small></div></div>
+    <div class="home-nav-actions"><select class="select" id="homeTheme" aria-label="Choose appearance"><option value="dark">◐ Midnight</option><option value="light">☼ Pearl</option><option value="neon">✦ Neon</option><option value="nature">❋ Forest</option></select></div>
+  </nav>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="hero-kicker"><i class="pulse-dot"></i> CLASSIC + ULTIMATE · ONLINE MULTIPLAYER</div>
+      <h2>A little board.<br><span>A big rivalry.</span></h2>
+      <p>Challenge a friend from anywhere, claim your room code, and make every move count. Or sharpen your strategy against the computer.</p>
+      <div class="hero-points"><span><b>✓</b> No account needed</span><span><b>✓</b> Live room updates</span><span><b>✓</b> Desktop + mobile</span></div>
+    </div>
+    <section class="lobby-card" aria-label="Online multiplayer lobby">
+      <div class="lobby-head"><div><h3>Play with a friend</h3><small>Create a private match or join one</small></div><span class="online-pill">● LIVE PLAY</span></div>
+      <div class="lobby-field"><label for="homeName">Your display name</label><input id="homeName" maxlength="18" autocomplete="nickname" placeholder="Enter your name" value="Player X"></div>
+      <div class="divider-label">Create a room</div>
+      <div class="create-grid">
+        <button class="create-choice" id="createClassicRoom" type="button"><span class="choice-icon">▦</span><span><strong>Classic room</strong><small>Quick 3 × 3 duel</small></span></button>
+        <button class="create-choice" id="createUltimateRoom" type="button"><span class="choice-icon">▩</span><span><strong>Ultimate room</strong><small>Strategic 9 × 9 battle</small></span></button>
+      </div>
+      <div class="divider-label">Or join a room</div>
+      <div class="join-row"><input class="code-input" id="joinRoomCode" maxlength="6" placeholder="ROOM CODE" aria-label="Room code"><button class="btn primary" id="joinRoomButton" type="button">Join room →</button></div>
+      <p class="home-status" id="homeStatus" role="status" aria-live="polite">Create a room and share its six-character code with your friend.</p>
+    </section>
+  </section>
+  <section class="offline-row" aria-label="Offline game modes">
+    <div class="offline-card"><div><strong>Play on this device</strong><small>Two players, one screen</small></div><button class="btn" id="offlineButton" type="button">Local game</button></div>
+    <div class="offline-card"><div><strong>Practice your strategy</strong><small>Take on the computer</small></div><button class="btn" id="vsComputerButton" type="button">Vs computer</button></div>
+  </section>
+  <section class="feature-row" aria-label="Game features">
+    <div class="feature-card"><span>⚡</span><strong>Real-time rooms</strong><small>Share a code or invite link and play together live.</small></div>
+    <div class="feature-card"><span>♟</span><strong>Two ways to play</strong><small>Choose fast Classic matches or the deeper Ultimate board.</small></div>
+    <div class="feature-card"><span>✦</span><strong>Your own game style</strong><small>Premium themes, animations, sound controls and match stats.</small></div>
+  </section>
+  <footer class="home-foot"><span>GRID ROYALE · BUILT FOR FRIENDLY COMPETITION</span><span>Private room codes · No public matchmaking</span></footer>
+</section>
+
+<div class="app" id="gameScreen" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">X<span style="color:#ffd1e7">O</span></div>
+      <div><h1>Grid Royale</h1><p>Think ahead. Own the grid.</p></div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="homeButton" type="button">⌂ Home</button>
+      <button class="btn" id="soundButton" type="button" aria-pressed="true">♪ Sound: On</button>
+      <button class="btn" id="fullscreenButton" type="button">⛶ Fullscreen</button>
+      <button class="btn primary" id="newGameButton" type="button">＋ New game</button>
+    </div>
+  </header>
+  <section class="online-bar" id="onlineBar" hidden>
+    <div class="online-bar-main"><span class="pulse-dot" id="onlineDot"></span><div><strong id="onlineRoomTitle">Online room</strong><small id="onlineRoomStatus">Waiting for your friend…</small></div><span class="room-code-chip" id="onlineRoomCode">------</span></div>
+    <div class="online-bar-actions"><button class="btn" id="copyInviteButton" type="button">↗ Copy invite</button><button class="btn" id="leaveRoomButton" type="button">Leave room</button></div>
+  </section>
+
+  <section class="settings" aria-label="Game settings">
+    <div class="field"><label for="gameType">Board</label><select class="select" id="gameType"><option value="normal">Classic 3 × 3</option><option value="ultimate">Ultimate 9 × 9</option></select></div>
+    <div class="field"><label for="playMode">Players</label><select class="select" id="playMode"><option value="pvp">Two players</option><option value="pvc">Vs computer</option></select></div>
+    <div class="field computer-only hidden" id="difficultyField"><label for="difficulty">AI difficulty</label><select class="select" id="difficulty"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard" selected>Hard</option></select></div>
+    <div class="field"><label for="theme">Appearance</label><select class="select" id="theme"><option value="dark">Midnight</option><option value="light">Pearl</option><option value="neon">Neon</option><option value="nature">Forest</option></select></div>
+    <div class="field"><label for="playerX">Player X name</label><input class="name-input" id="playerX" maxlength="18" value="Player X" autocomplete="off"></div>
+    <div class="field"><label for="playerO">Player O name</label><input class="name-input" id="playerO" maxlength="18" value="Player O" autocomplete="off"></div>
+  </section>
+
+  <main class="layout">
+    <section class="panel game-panel" aria-label="Game board">
+      <div class="game-heading"><div><p class="eyebrow">Live match</p><h2 id="boardTitle">Classic Tic Tac Toe</h2></div><span class="mode-pill" id="modePill">CLASSIC MODE</span></div>
+      <div class="turn-strip" aria-live="polite">
+        <div class="turn-main"><div class="turn-symbol x" id="turnSymbol">X</div><div class="turn-text"><strong id="turnTitle">Player X's turn</strong><span id="turnSubtitle">Choose an empty square to play.</span></div></div>
+        <div class="turn-hint" id="turnHint">Every move matters.<br>Plan your next two.</div>
+      </div>
+      <div class="player-strip">
+        <div class="player-card active" id="playerCardX"><div class="player-token">X</div><div class="player-info"><strong id="playerCardNameX">Player X</strong><small id="playerCardRoleX">Player one</small></div></div>
+        <div class="player-card" id="playerCardO"><div class="player-token o">O</div><div class="player-info"><strong id="playerCardNameO">Player O</strong><small id="playerCardRoleO">Player two</small></div></div>
+      </div>
+      <div class="board-wrap">
+        <div class="normal-board" id="normalBoard" role="group" aria-label="Classic tic tac toe board"></div>
+        <div class="ultimate-board" id="ultimateBoard" role="group" aria-label="Ultimate tic tac toe board" hidden></div>
+      </div>
+      <div class="board-footer">
+        <div class="board-tip" id="boardTip">Tap a square to place your mark. Get three in a row to win.</div>
+        <div class="board-buttons"><button class="btn" id="undoButton" type="button">↶ Undo</button><button class="btn" id="resetBoardButton" type="button">↻ Restart</button></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel side-panel">
+        <div class="side-title"><h3>Match scoreboard</h3><span id="scoreStorageNote">Saved on this device</span></div>
+        <div class="score-grid">
+          <div class="score-box x"><strong id="scoreX">0</strong><small id="scoreLabelX">Player X</small></div>
+          <div class="score-box o"><strong id="scoreO">0</strong><small id="scoreLabelO">Player O</small></div>
+          <div class="score-box draw"><strong id="scoreDraw">0</strong><small>Draws</small></div>
+        </div>
+        <button class="btn" id="resetScoresButton" type="button" style="width:100%;margin-top:10px">Reset scoreboard</button>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-title"><h3>Match analytics</h3><span>Live stats</span></div>
+        <div class="stat-grid">
+          <div class="stat"><small>Time elapsed</small><strong id="elapsedTime">00:00</strong></div>
+          <div class="stat"><small>Total moves</small><strong id="moveCount">0</strong></div>
+          <div class="stat"><small>Average move time</small><strong id="averageTime">0.0s</strong></div>
+          <div class="stat"><small>Game status</small><strong id="gameStatus">Playing</strong></div>
+        </div>
+        <div class="balance-labels"><span>X advantage</span><span>O advantage</span></div>
+        <div class="balance-track" aria-label="Position balance estimate"><div class="balance-fill" id="balanceFill"></div></div>
+        <div class="balance-caption" id="balanceCaption">Position read: Even. This is a board heuristic, not a win-probability prediction.</div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-title"><h3 id="historyHeading">Recent matches</h3><span id="historyMeta">Latest 12</span></div>
+        <div class="history-list" id="historyList"><div class="empty-state">Your finished matches will appear here.</div></div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-title"><h3>How to play</h3><span id="rulesTag">Classic rules</span></div>
+        <div class="howto" id="howToPlay"><div><strong>Classic:</strong> Take turns placing X and O. The first player to make a line of three wins.</div><div><strong>Ultimate:</strong> Your move sends your opponent to the mini-board in the same cell position. If that board is already closed, they may choose any open board.</div><div><strong>Tip:</strong> Winning a mini-board claims that square on the large board. Claim three large-board squares in a row to win.</div><div class="keyboard"><kbd>N</kbd><span>New game</span><kbd>U</kbd><span>Undo</span><kbd>M</kbd><span>Mute</span><kbd>F</kbd><span>Fullscreen</span></div></div>
+      </section>
+    </aside>
+  </main>
+  <p class="footer-note">GRID ROYALE · Online rooms are temporary and close after inactivity · Offline scores stay in this browser</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="celebrationLayer" aria-hidden="true"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const STORAGE_KEY = 'gridRoyalePremium_v1';
+  const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  const EMPTY = '';
+
+  function readSaved() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; }
+    catch (error) { return {}; }
+  }
+  const saved = readSaved();
+  let gameType = 'normal';
+  let playMode = 'pvp';
+  let difficulty = 'hard';
+  let theme = saved.theme || 'dark';
+  let soundEnabled = saved.soundEnabled !== false;
+  let names = { X: saved.names?.X || 'Player X', O: saved.names?.O || 'Player O' };
+  let scores = { X: Number(saved.scores?.X) || 0, O: Number(saved.scores?.O) || 0, draw: Number(saved.scores?.draw) || 0 };
+  let gameHistory = Array.isArray(saved.history) ? saved.history.slice(-12) : [];
+
+  let board = Array(9).fill(EMPTY);
+  let megaBoard = Array.from({length:9}, () => Array(9).fill(EMPTY));
+  let megaStatus = Array(9).fill(EMPTY); // '', 'X', 'O', or 'draw'
+  let activeMiniBoard = null;
+  let currentPlayer = 'X';
+  let gameActive = true;
+  let winningLine = null;
+  let metaWinningLine = null;
+  let startTime = Date.now();
+  let endTime = null;
+  let lastMoveTimestamp = startTime;
+  let totalMoveTime = 0;
+  let moveCount = 0;
+  let currentMoves = [];
+  let historyStack = [];
+  let aiTimer = null;
+  let toastTimer = null;
+
+  // Online multiplayer state. The server is authoritative for every online move.
+  const socket = window.io ? window.io({ autoConnect: false, reconnection: true, reconnectionAttempts: Infinity }) : null;
+  let onlineMode = false;
+  let onlineConnected = false;
+  let onlineReady = false;
+  let onlineRoomCode = '';
+  let onlineToken = '';
+  let onlinePlayer = null;
+  let onlineHost = false;
+  let onlineCanUndo = false;
+  let pendingOnlineAction = null;
+  let resumingSession = false;
+  const ROOM_SESSION_KEY = 'gridRoyaleOnlineRoom_v1';
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        theme, soundEnabled, names, scores, history: gameHistory.slice(-12)
+      }));
+    } catch (error) {
+      // The game remains playable when browser storage is unavailable.
+    }
+  }
+  function showToast(message) {
+    const toast = $('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1900);
+  }
+  function showHome() {
+    $('homeScreen').hidden = false;
+    $('gameScreen').hidden = true;
+    $('homeTheme').value = theme;
+    $('homeName').value = names.X;
+    $('homeStatus').textContent = 'Create a room and share its six-character code with your friend.';
+    const queryCode = new URLSearchParams(location.search).get('room');
+    if (queryCode) $('joinRoomCode').value = queryCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    updateHomeStats();
+  }
+  function showGame() {
+    $('homeScreen').hidden = true;
+    $('gameScreen').hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function updateHomeStats() {
+    const el = $('homeStatus');
+    if (!el) return;
+    if (!onlineMode) el.textContent = 'Create a room and share its six-character code with your friend.';
+  }
+  function isOnlineLocked() {
+    return onlineMode && (!onlineConnected || !onlineReady || onlinePlayer !== currentPlayer);
+  }
+  function clearOnlineSession() {
+    onlineMode = false; onlineConnected = false; onlineReady = false;
+    onlineRoomCode = ''; onlineToken = ''; onlinePlayer = null; onlineHost = false;
+    onlineCanUndo = false; pendingOnlineAction = null;
+    try { localStorage.removeItem(ROOM_SESSION_KEY); } catch (error) {}
+    historyStack = [];
+    $('onlineBar').hidden = true;
+    $('gameType').disabled = false; $('playMode').disabled = false; $('difficulty').disabled = false;
+    $('playerX').disabled = false; $('playerO').disabled = false;
+    if (location.search) history.replaceState({}, '', location.pathname);
+  }
+  function updateOnlineBar(state) {
+    $('onlineBar').hidden = !onlineMode;
+    if (!onlineMode) return;
+    $('onlineRoomCode').textContent = onlineRoomCode || '------';
+    const connectedCount = state?.players ? ['X','O'].filter(mark => state.players[mark]?.connected).length : (onlineConnected ? 1 : 0);
+    const bothReady = connectedCount === 2;
+    $('onlineDot').style.background = onlineConnected ? 'var(--success)' : 'var(--warning)';
+    $('onlineRoomTitle').textContent = `Private room · ${gameType === 'normal' ? 'Classic' : 'Ultimate'}`;
+    $('onlineRoomStatus').textContent = !onlineConnected ? 'Reconnecting to the room…' : (bothReady ? 'Both players connected · Live match' : (onlinePlayer === 'X' ? 'Waiting for your friend to join' : 'Waiting for the room creator'));
+  }
+  function saveOnlineSession() {
+    try { localStorage.setItem(ROOM_SESSION_KEY, JSON.stringify({ code: onlineRoomCode, token: onlineToken, player: onlinePlayer, host: onlineHost })); } catch (error) {}
+  }
+  function sendPendingOnlineAction() {
+    if (!socket || !socket.connected || !pendingOnlineAction) return;
+    const action = pendingOnlineAction; pendingOnlineAction = null;
+    if (action.type === 'create') socket.emit('room:create', { gameType: action.gameType, name: action.name });
+    else socket.emit('room:join', { code: action.code, name: action.name });
+  }
+  function startOnlineCreate(type) {
+    if (!socket) { $('homeStatus').textContent = 'The online server is unavailable in this copy. Run the included server to enable rooms.'; return; }
+    const name = ($('homeName').value || 'Player X').trim().slice(0,18) || 'Player X';
+    names.X = name; persist();
+    pendingOnlineAction = { type: 'create', gameType: type, name };
+    $('homeStatus').textContent = 'Connecting and creating your room…';
+    if (socket.connected) sendPendingOnlineAction(); else socket.connect();
+  }
+  function startOnlineJoin() {
+    if (!socket) { $('homeStatus').textContent = 'The online server is unavailable in this copy. Run the included server to enable rooms.'; return; }
+    const code = $('joinRoomCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,6);
+    if (code.length !== 6) { $('homeStatus').textContent = 'Enter the complete six-character room code.'; $('joinRoomCode').focus(); return; }
+    const name = ($('homeName').value || 'Player O').trim().slice(0,18) || 'Player O';
+    pendingOnlineAction = { type: 'join', code, name };
+    $('homeStatus').textContent = 'Connecting to your friend’s room…';
+    if (socket.connected) sendPendingOnlineAction(); else socket.connect();
+  }
+  function applyOnlineState(state) {
+    if (!state || state.code !== onlineRoomCode) return;
+    onlineConnected = Boolean(socket?.connected);
+    onlineReady = Boolean(state.players?.X?.connected && state.players?.O?.connected);
+    gameType = state.gameType;
+    $('gameType').value = gameType;
+    $('playMode').value = 'pvp'; playMode = 'pvp';
+    board = Array.isArray(state.board) ? state.board.slice() : Array(9).fill('');
+    megaBoard = Array.isArray(state.megaBoard) ? state.megaBoard.map(row => row.slice()) : Array.from({length:9}, () => Array(9).fill(''));
+    megaStatus = Array.isArray(state.megaStatus) ? state.megaStatus.slice() : Array(9).fill('');
+    activeMiniBoard = state.activeMiniBoard;
+    currentPlayer = state.currentPlayer;
+    gameActive = state.gameActive;
+    winningLine = state.winningLine ? state.winningLine.slice() : null;
+    metaWinningLine = state.metaWinningLine ? state.metaWinningLine.slice() : null;
+    moveCount = state.moveCount || 0;
+    currentMoves = Array.isArray(state.currentMoves) ? state.currentMoves.slice() : [];
+    startTime = state.startTime || Date.now(); endTime = state.endTime || null;
+    totalMoveTime = state.totalMoveTime || 0; lastMoveTimestamp = state.lastMoveTimestamp || Date.now();
+    scores = state.scores || { X: 0, O: 0, draw: 0 };
+    names.X = state.players?.X?.name || 'Player X';
+    names.O = state.players?.O?.name || 'Waiting for friend';
+    onlineCanUndo = Boolean(state.canUndo);
+    historyStack = [];
+    $('playerX').value = names.X; $('playerO').value = names.O;
+    render(); updateOnlineBar(state);
+  }
+  function copyInvite() {
+    const url = `${location.origin}${location.pathname}?room=${onlineRoomCode}`;
+    const text = `Join my Grid Royale match! Room code: ${onlineRoomCode}\n${url}`;
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => showToast('Invite copied. Send it to your friend!')).catch(() => showToast(`Share room code: ${onlineRoomCode}`));
+    else showToast(`Share room code: ${onlineRoomCode}`);
+  }
+  function leaveOnlineRoom(skipConfirm = false) {
+    if (onlineMode && onlineHost && !skipConfirm && !window.confirm('Leaving will close this room for both players. Continue?')) return;
+    if (onlineMode && socket?.connected) socket.emit('room:leave', { code: onlineRoomCode });
+    clearOnlineSession(); showHome(); showToast('You left the online room.');
+  }
+  function returnHome() {
+    if (onlineMode) {
+      if (onlineHost && !window.confirm('Leaving will close this room for both players. Continue?')) return;
+      leaveOnlineRoom(true);
+    } else showHome();
+  }
+  if (socket) {
+    socket.on('connect', () => {
+      onlineConnected = true;
+      if (pendingOnlineAction) sendPendingOnlineAction();
+      else if (onlineMode && onlineRoomCode && onlineToken) socket.emit('room:resume', { code: onlineRoomCode, token: onlineToken });
+      else render();
+    });
+    socket.on('disconnect', () => {
+      onlineConnected = false;
+      if (onlineMode) { render(); updateOnlineBar(); }
+    });
+    socket.on('connect_error', () => {
+      if (pendingOnlineAction) $('homeStatus').textContent = 'Cannot reach the game server yet. Check the site connection and try again.';
+      if (onlineMode) { showToast('Connection lost. Reconnecting…'); render(); }
+    });
+    socket.on('room:joined', data => {
+      resumingSession = false;
+      onlineMode = true; onlineRoomCode = data.code; onlinePlayer = data.player;
+      onlineToken = data.token; onlineHost = Boolean(data.host); onlineConnected = true;
+      $('gameType').value = data.gameType; $('playMode').value = 'pvp';
+      saveOnlineSession();
+      history.replaceState({}, '', `${location.pathname}?room=${data.code}`);
+      showGame();
+      showToast(`Connected to room ${data.code}. You are ${data.player}.`);
+    });
+    socket.on('room:state', state => {
+      if (!onlineMode) return;
+      applyOnlineState(state);
+      updateOnlineBar(state);
+    });
+    socket.on('room:error', data => {
+      const message = data?.message || 'Something went wrong with the room.';
+      if (!onlineMode) $('homeStatus').textContent = message;
+      showToast(message);
+      if (pendingOnlineAction) pendingOnlineAction = null;
+      if (resumingSession) { resumingSession = false; clearOnlineSession(); showHome(); }
+    });
+    socket.on('room:closed', data => {
+      clearOnlineSession(); showHome(); showToast(data?.message || 'This room has closed.');
+    });
+  }
+
+  function cancelAI() {
+    if (aiTimer !== null) {
+      clearTimeout(aiTimer);
+      aiTimer = null;
+    }
+  }
+  function isComputerTurn() {
+    return playMode === 'pvc' && currentPlayer === 'O';
+  }
+  function getName(player) {
+    return names[player] || `Player ${player}`;
+  }
+  function applyTheme() {
+    document.body.dataset.theme = theme;
+    $('theme').value = theme;
+    persist();
+  }
+  function playSound(kind) {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const settings = {
+        move: [540, .055, 'sine'],
+        win: [760, .20, 'triangle'],
+        draw: [280, .16, 'sine'],
+        undo: [390, .07, 'sine']
+      }[kind] || [440, .07, 'sine'];
+      oscillator.type = settings[2];
+      oscillator.frequency.setValueAtTime(settings[0], context.currentTime);
+      if (kind === 'win') oscillator.frequency.exponentialRampToValueAtTime(1120, context.currentTime + .18);
+      gain.gain.setValueAtTime(.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.075, context.currentTime + .012);
+      gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + settings[1]);
+      oscillator.connect(gain); gain.connect(context.destination);
+      oscillator.start(); oscillator.stop(context.currentTime + settings[1] + .02);
+      oscillator.onended = () => context.close().catch(() => {});
+    } catch (error) { /* Audio is optional; never block a move. */ }
+  }
+  function findWinningLine(state) {
+    for (const line of WIN_LINES) {
+      const [a,b,c] = line;
+      if ((state[a] === 'X' || state[a] === 'O') && state[a] === state[b] && state[b] === state[c]) return line;
+    }
+    return null;
+  }
+  function snapshot() {
+    return {
+      board: board.slice(), megaBoard: megaBoard.map(row => row.slice()), megaStatus: megaStatus.slice(),
+      activeMiniBoard, currentPlayer, gameActive, winningLine: winningLine ? winningLine.slice() : null,
+      metaWinningLine: metaWinningLine ? metaWinningLine.slice() : null, startTime, endTime,
+      lastMoveTimestamp, totalMoveTime, moveCount, currentMoves: currentMoves.slice(),
+      scores: {...scores}, gameHistory: gameHistory.slice()
+    };
+  }
+  function restoreSnapshot(s) {
+    board = s.board.slice(); megaBoard = s.megaBoard.map(row => row.slice()); megaStatus = s.megaStatus.slice();
+    activeMiniBoard = s.activeMiniBoard; currentPlayer = s.currentPlayer; gameActive = s.gameActive;
+    winningLine = s.winningLine ? s.winningLine.slice() : null;
+    metaWinningLine = s.metaWinningLine ? s.metaWinningLine.slice() : null;
+    startTime = s.startTime; endTime = s.endTime; lastMoveTimestamp = s.lastMoveTimestamp;
+    totalMoveTime = s.totalMoveTime; moveCount = s.moveCount; currentMoves = s.currentMoves.slice();
+    scores = {...s.scores}; gameHistory = s.gameHistory.slice();
+    persist(); render();
+  }
+  function resetMatch() {
+    if (onlineMode) {
+      if (!onlineHost) { showToast('Only the room creator can start a new round.'); return; }
+      socket?.emit('room:new-round', { code: onlineRoomCode });
+      return;
+    }
+    cancelAI();
+    gameType = $('gameType').value;
+    playMode = $('playMode').value;
+    difficulty = $('difficulty').value;
+    board = Array(9).fill(EMPTY);
+    megaBoard = Array.from({length:9}, () => Array(9).fill(EMPTY));
+    megaStatus = Array(9).fill(EMPTY);
+    activeMiniBoard = null; currentPlayer = 'X'; gameActive = true;
+    winningLine = null; metaWinningLine = null;
+    startTime = Date.now(); endTime = null; lastMoveTimestamp = startTime;
+    totalMoveTime = 0; moveCount = 0; currentMoves = []; historyStack = [];
+    render();
+    showToast('A fresh match is ready. Good luck!');
+  }
+  function elapsedSeconds() {
+    return Math.max(0, Math.floor(((endTime || Date.now()) - startTime) / 1000));
+  }
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60).toString().padStart(2,'0');
+    const secs = (seconds % 60).toString().padStart(2,'0');
+    return `${mins}:${secs}`;
+  }
+  function recordMove(player, boardIndex, cellIndex) {
+    const now = Date.now();
+    totalMoveTime += Math.max(0, now - lastMoveTimestamp);
+    lastMoveTimestamp = now;
+    moveCount += 1;
+    if (gameType === 'normal') currentMoves.push(`${player} → ${cellIndex + 1}`);
+    else currentMoves.push(`${player} → board ${boardIndex + 1}, cell ${cellIndex + 1}`);
+  }
+  function finishGame(winner) {
+    gameActive = false;
+    endTime = Date.now();
+    if (winner === 'draw') scores.draw += 1;
+    else scores[winner] += 1;
+    const result = winner === 'draw' ? 'Draw' : `${getName(winner)} (${winner}) won`;
+    gameHistory.push({ result, type: gameType === 'normal' ? 'Classic' : 'Ultimate', moves: moveCount, date: new Date().toLocaleString() });
+    gameHistory = gameHistory.slice(-12);
+    persist();
+    playSound(winner === 'draw' ? 'draw' : 'win');
+    if (winner !== 'draw') celebrate();
+  }
+  function celebrate() {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const layer = $('celebrationLayer');
+    const colors = ['#8b7cff','#36d9c4','#ff8cba','#ffc875','#67a8ff','#55dfb2'];
+    for (let i = 0; i < 48; i++) {
+      const piece = document.createElement('i');
+      piece.className = 'confetti';
+      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.background = colors[i % colors.length];
+      piece.style.setProperty('--fall', `${1.8 + Math.random() * 1.7}s`);
+      piece.style.setProperty('--drift', `${-100 + Math.random() * 200}px`);
+      piece.style.animationDelay = `${Math.random() * .45}s`;
+      layer.appendChild(piece);
+      setTimeout(() => piece.remove(), 4300);
+    }
+  }
+  function legalUltimateMoves(boards, statuses, forced) {
+    const moves = [];
+    const boardIndexes = forced !== null && statuses[forced] === EMPTY ? [forced] : statuses.map((s,i) => s === EMPTY ? i : -1).filter(i => i >= 0);
+    for (const b of boardIndexes) {
+      for (let c = 0; c < 9; c++) if (boards[b][c] === EMPTY) moves.push({ board: b, cell: c });
+    }
+    return moves;
+  }
+  function applySimulatedUltimateMove(boards, statuses, move, player) {
+    const nextBoards = boards.map(row => row.slice());
+    const nextStatuses = statuses.slice();
+    nextBoards[move.board][move.cell] = player;
+    const localWin = findWinningLine(nextBoards[move.board]);
+    if (localWin) nextStatuses[move.board] = player;
+    else if (!nextBoards[move.board].includes(EMPTY)) nextStatuses[move.board] = 'draw';
+    const metaWin = findWinningLine(nextStatuses);
+    const isDraw = !metaWin && nextStatuses.every(status => status !== EMPTY);
+    const nextForced = nextStatuses[move.cell] === EMPTY ? move.cell : null;
+    return { boards: nextBoards, statuses: nextStatuses, nextForced, metaWin, isDraw };
+  }
+  function evaluateNormal(state) {
+    let score = 0;
+    for (const [a,b,c] of WIN_LINES) {
+      const line = [state[a],state[b],state[c]];
+      const x = line.filter(v => v === 'X').length;
+      const o = line.filter(v => v === 'O').length;
+      if (x && o) continue;
+      if (x === 2) score += 5;
+      else if (x === 1) score += 1;
+      if (o === 2) score -= 5;
+      else if (o === 1) score -= 1;
+    }
+    return score;
+  }
+  function minimax(state, depth, maximizing, alpha, beta) {
+    const winner = findWinningLine(state);
+    if (winner === 'O') return 10 - depth;
+    if (winner === 'X') return depth - 10;
+    const emptyCells = state.map((v,i) => v === EMPTY ? i : -1).filter(i => i >= 0);
+    if (!emptyCells.length) return 0;
+    if (maximizing) {
+      let best = -Infinity;
+      for (const i of emptyCells) {
+        state[i] = 'O'; best = Math.max(best, minimax(state, depth + 1, false, alpha, beta)); state[i] = EMPTY;
+        alpha = Math.max(alpha,best); if (beta <= alpha) break;
+      }
+      return best;
+    }
+    let best = Infinity;
+    for (const i of emptyCells) {
+      state[i] = 'X'; best = Math.min(best, minimax(state, depth + 1, true, alpha, beta)); state[i] = EMPTY;
+      beta = Math.min(beta,best); if (beta <= alpha) break;
+    }
+    return best;
+  }
+  function bestNormalMove() {
+    let bestScore = -Infinity, choices = [];
+    for (let i = 0; i < 9; i++) {
+      if (board[i] !== EMPTY) continue;
+      board[i] = 'O';
+      const score = minimax(board, 0, false, -Infinity, Infinity);
+      board[i] = EMPTY;
+      if (score > bestScore) { bestScore = score; choices = [i]; }
+      else if (score === bestScore) choices.push(i);
+    }
+    return choices[Math.floor(Math.random() * choices.length)];
+  }
+  function evaluateUltimate(boards, statuses) {
+    let score = 0;
+    // Strategic value of the large-board lines. Drawn boards block a line for both players.
+    for (const [a,b,c] of WIN_LINES) {
+      const line = [statuses[a],statuses[b],statuses[c]];
+      const x = line.filter(v => v === 'X').length;
+      const o = line.filter(v => v === 'O').length;
+      const blocked = line.includes('draw') || (x > 0 && o > 0);
+      if (blocked) continue;
+      if (o === 2) score += 48;
+      else if (o === 1) score += 10;
+      if (x === 2) score -= 48;
+      else if (x === 1) score -= 10;
+    }
+    // Reward local threats, weighted by each mini-board's importance on the big board.
+    for (let b = 0; b < 9; b++) {
+      if (statuses[b] !== EMPTY) continue;
+      const weight = b === 4 ? 1.35 : ([0,2,6,8].includes(b) ? 1.12 : 1);
+      const cells = boards[b];
+      for (const [a,c,d] of WIN_LINES) {
+        const line = [cells[a],cells[c],cells[d]];
+        const x = line.filter(v => v === 'X').length;
+        const o = line.filter(v => v === 'O').length;
+        if (x && o) continue;
+        if (o === 2) score += 7 * weight;
+        else if (o === 1) score += 1.5 * weight;
+        if (x === 2) score -= 7 * weight;
+        else if (x === 1) score -= 1.5 * weight;
+      }
+      if (cells[4] === 'O') score += 1.1 * weight;
+      if (cells[4] === 'X') score -= 1.1 * weight;
+    }
+    return score;
+  }
+  function scoreUltimateMove(move, depthTwo) {
+    const afterO = applySimulatedUltimateMove(megaBoard, megaStatus, move, 'O');
+    if (afterO.metaWin) return 100000;
+    if (afterO.isDraw) return 0;
+    const immediate = evaluateUltimate(afterO.boards, afterO.statuses);
+    if (!depthTwo) return immediate;
+    const replies = legalUltimateMoves(afterO.boards, afterO.statuses, afterO.nextForced);
+    if (!replies.length) return immediate;
+    let worstReply = Infinity;
+    for (const reply of replies) {
+      const afterX = applySimulatedUltimateMove(afterO.boards, afterO.statuses, reply, 'X');
+      const responseScore = afterX.metaWin ? -100000 : (afterX.isDraw ? 0 : evaluateUltimate(afterX.boards, afterX.statuses));
+      if (responseScore < worstReply) worstReply = responseScore;
+      if (worstReply <= -100000) break;
+    }
+    return worstReply;
+  }
+  function bestUltimateMove(depthTwo) {
+    const moves = legalUltimateMoves(megaBoard, megaStatus, activeMiniBoard);
+    let bestScore = -Infinity, choices = [];
+    for (const move of moves) {
+      const score = scoreUltimateMove(move, depthTwo);
+      if (score > bestScore) { bestScore = score; choices = [move]; }
+      else if (score === bestScore) choices.push(move);
+    }
+    return choices[Math.floor(Math.random() * choices.length)] || null;
+  }
+  function chooseComputerMove() {
+    if (gameType === 'normal') {
+      const available = board.map((v,i) => v === EMPTY ? i : -1).filter(i => i >= 0);
+      if (difficulty === 'easy') return { board: null, cell: available[Math.floor(Math.random() * available.length)] };
+      if (difficulty === 'medium' && Math.random() < .38) return { board: null, cell: available[Math.floor(Math.random() * available.length)] };
+      return { board: null, cell: bestNormalMove() };
+    }
+    const legal = legalUltimateMoves(megaBoard, megaStatus, activeMiniBoard);
+    if (!legal.length) return null;
+    if (difficulty === 'easy') return legal[Math.floor(Math.random() * legal.length)];
+    if (difficulty === 'medium') {
+      if (Math.random() < .35) return legal[Math.floor(Math.random() * legal.length)];
+      return bestUltimateMove(false);
+    }
+    return bestUltimateMove(true);
+  }
+  function scheduleComputerMove() {
+    cancelAI();
+    if (!gameActive || !isComputerTurn()) return;
+    $('turnTitle').textContent = 'Computer is thinking…';
+    $('turnSubtitle').textContent = 'Your move is locked until the computer responds.';
+    renderBoardOnly();
+    aiTimer = setTimeout(() => {
+      aiTimer = null;
+      if (!gameActive || playMode !== 'pvc' || currentPlayer !== 'O') return;
+      const move = chooseComputerMove();
+      if (!move) return;
+      makeMove(move.board, move.cell, 'O');
+    }, gameType === 'normal' ? 430 : 520);
+  }
+  function makeMove(boardIndex, cellIndex, actor) {
+    if (onlineMode) {
+      if (!onlineConnected || !onlineReady || actor !== onlinePlayer || actor !== currentPlayer) return;
+      socket?.emit('room:move', { code: onlineRoomCode, boardIndex, cellIndex });
+      return;
+    }
+    if (!gameActive || actor !== currentPlayer) return;
+    if (playMode === 'pvc' && actor === 'X' && isComputerTurn()) return;
+    if (gameType === 'normal') {
+      if (!Number.isInteger(cellIndex) || cellIndex < 0 || cellIndex > 8 || board[cellIndex] !== EMPTY) return;
+    } else {
+      if (!Number.isInteger(boardIndex) || boardIndex < 0 || boardIndex > 8 || !Number.isInteger(cellIndex) || cellIndex < 0 || cellIndex > 8) return;
+      if (megaStatus[boardIndex] !== EMPTY || megaBoard[boardIndex][cellIndex] !== EMPTY) return;
+      if (activeMiniBoard !== null && megaStatus[activeMiniBoard] === EMPTY && boardIndex !== activeMiniBoard) return;
+    }
+    historyStack.push({ snapshot: snapshot(), actor });
+    if (gameType === 'normal') {
+      board[cellIndex] = actor;
+      recordMove(actor, null, cellIndex);
+      winningLine = findWinningLine(board);
+      playSound('move');
+      if (winningLine) finishGame(actor);
+      else if (!board.includes(EMPTY)) finishGame('draw');
+    } else {
+      megaBoard[boardIndex][cellIndex] = actor;
+      recordMove(actor, boardIndex, cellIndex);
+      const localWin = findWinningLine(megaBoard[boardIndex]);
+      if (localWin) megaStatus[boardIndex] = actor;
+      else if (!megaBoard[boardIndex].includes(EMPTY)) megaStatus[boardIndex] = 'draw';
+      metaWinningLine = findWinningLine(megaStatus);
+      playSound('move');
+      if (metaWinningLine) finishGame(actor);
+      else if (megaStatus.every(status => status !== EMPTY)) finishGame('draw');
+      else activeMiniBoard = megaStatus[cellIndex] === EMPTY ? cellIndex : null;
+    }
+    if (gameActive) currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    render();
+    if (gameActive && isComputerTurn()) scheduleComputerMove();
+  }
+  function undoMove() {
+    if (onlineMode) {
+      if (!onlineCanUndo) { showToast('You can undo only your most recent move, before your friend moves.'); return; }
+      socket?.emit('room:undo', { code: onlineRoomCode });
+      return;
+    }
+    cancelAI();
+    if (!historyStack.length) { showToast('There are no moves to undo yet.'); return; }
+    const latest = historyStack.pop();
+    let target = latest.snapshot;
+    if (playMode === 'pvc' && latest.actor === 'O' && historyStack.length && historyStack[historyStack.length - 1].actor === 'X') {
+      target = historyStack.pop().snapshot;
+    }
+    restoreSnapshot(target);
+    playSound('undo');
+    showToast('Move undone.');
+  }
+  function renderNormalBoard() {
+    const computerTurn = isComputerTurn() || isOnlineLocked();
+    $('normalBoard').innerHTML = board.map((value,i) => {
+      const markClass = value === 'X' ? 'mark-x' : value === 'O' ? 'mark-o' : '';
+      const winClass = winningLine?.includes(i) ? 'winning' : '';
+      const disabled = !gameActive || computerTurn || value !== EMPTY;
+      const label = value ? `Cell ${i + 1}, ${value}` : `Empty cell ${i + 1}`;
+      return `<button type="button" class="cell ${markClass} ${winClass}" data-cell="${i}" aria-label="${label}" ${disabled ? 'disabled' : ''}>${value}</button>`;
+    }).join('');
+  }
+  function renderUltimateBoard() {
+    const computerTurn = isComputerTurn() || isOnlineLocked();
+    const html = megaBoard.map((cells,b) => {
+      const status = megaStatus[b];
+      const active = status === EMPTY && (activeMiniBoard === null || activeMiniBoard === b);
+      const closed = status !== EMPTY;
+      const metaWon = metaWinningLine?.includes(b) ? 'won-board' : '';
+      const miniClass = `mini-board ${active && activeMiniBoard !== null ? 'active-mini' : ''} ${!active && !closed ? 'inactive-mini' : ''} ${metaWon}`;
+      const localWin = status === 'X' || status === 'O' ? findWinningLine(cells) : null;
+      const cellHtml = cells.map((value,c) => {
+        const markClass = value === 'X' ? 'mark-x' : value === 'O' ? 'mark-o' : '';
+        const winClass = localWin?.includes(c) ? 'winning' : '';
+        const disabled = !gameActive || computerTurn || closed || !active || value !== EMPTY;
+        const label = value ? `Board ${b + 1}, cell ${c + 1}, ${value}` : `Board ${b + 1}, empty cell ${c + 1}`;
+        return `<button type="button" class="cell ${markClass} ${winClass}" data-board="${b}" data-cell="${c}" aria-label="${label}" ${disabled ? 'disabled' : ''}>${value}</button>`;
+      }).join('');
+      const cover = closed ? `<div class="mini-cover ${status === 'draw' ? 'draw' : ''}" aria-label="${status === 'draw' ? 'Drawn board' : `${status} won this mini-board`}">${status === 'draw' ? 'Draw' : status}</div>` : '';
+      return `<div class="${miniClass}" data-mini="${b}" aria-label="Mini-board ${b + 1}">${cellHtml}${cover}</div>`;
+    }).join('');
+    $('ultimateBoard').innerHTML = html;
+  }
+  function renderBoardOnly() {
+    if (gameType === 'normal') renderNormalBoard(); else renderUltimateBoard();
+  }
+  function renderHistory() {
+    const list = $('historyList');
+    if (onlineMode) {
+      $('historyHeading').textContent = 'Round moves';
+      $('historyMeta').textContent = `${currentMoves.length} total`;
+      if (!currentMoves.length) {
+        list.innerHTML = '<div class="empty-state">Moves will appear here as the room match begins.</div>';
+        return;
+      }
+      list.innerHTML = currentMoves.slice(-12).reverse().map((move, i) => `<div class="history-item"><strong>${escapeHTML(move)}</strong><small>Move ${currentMoves.length - i}</small></div>`).join('');
+      return;
+    }
+    $('historyHeading').textContent = 'Recent matches';
+    $('historyMeta').textContent = 'Latest 12';
+    if (!gameHistory.length) {
+      list.innerHTML = '<div class="empty-state">Your finished matches will appear here.</div>';
+      return;
+    }
+    list.innerHTML = gameHistory.slice().reverse().map(item => `<div class="history-item"><strong>${escapeHTML(item.result)}</strong><small>${escapeHTML(item.type)} · ${item.moves} moves<br>${escapeHTML(item.date)}</small></div>`).join('');
+  }
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function renderScoreboard() {
+    $('scoreX').textContent = scores.X; $('scoreO').textContent = scores.O; $('scoreDraw').textContent = scores.draw;
+    $('scoreStorageNote').textContent = onlineMode ? 'Room score · live' : 'Saved on this device';
+    $('scoreLabelX').textContent = getName('X'); $('scoreLabelO').textContent = getName('O');
+  }
+  function positionEstimate() {
+    if (gameType === 'normal') return evaluateNormal(board);
+    return -evaluateUltimate(megaBoard, megaStatus); // Positive values favour X for the meter.
+  }
+  function renderBalance() {
+    const raw = positionEstimate();
+    const normalized = Math.max(-50, Math.min(50, raw));
+    const xShare = 50 + normalized;
+    $('balanceFill').style.width = `${xShare}%`;
+    let text = 'Even';
+    if (raw > 4) text = 'X has a positional edge';
+    else if (raw < -4) text = 'O has a positional edge';
+    $('balanceCaption').textContent = `Position read: ${text}. This is a board heuristic, not a win-probability prediction.`;
+  }
+  function renderStats() {
+    $('elapsedTime').textContent = formatTime(elapsedSeconds());
+    $('moveCount').textContent = moveCount;
+    $('averageTime').textContent = `${moveCount ? (totalMoveTime / moveCount / 1000).toFixed(1) : '0.0'}s`;
+    $('gameStatus').textContent = onlineMode && !onlineReady ? 'Waiting' : (gameActive ? (onlineMode && isOnlineLocked() ? 'Opponent turn' : (isComputerTurn() ? 'Computer turn' : 'Playing')) : 'Finished');
+  }
+  function renderTurn() {
+    const computerTurn = isComputerTurn();
+    const onlineLocked = isOnlineLocked();
+    const symbol = $('turnSymbol');
+    symbol.textContent = currentPlayer;
+    symbol.className = `turn-symbol ${currentPlayer.toLowerCase()}`;
+    $('turnTitle').textContent = !gameActive
+      ? (winningLine || metaWinningLine ? `${getName(currentPlayer)} wins!` : 'Match drawn')
+      : (onlineMode && !onlineReady ? 'Waiting for your friend…' : (onlineMode && !onlineConnected ? 'Reconnecting…' : (computerTurn ? 'Computer is thinking…' : (onlineLocked ? `Waiting for ${getName(currentPlayer)}` : `${getName(currentPlayer)}'s turn`))));
+    $('turnSubtitle').textContent = !gameActive ? 'Start a new match or review the result.' : (onlineMode && !onlineReady ? 'Share the room code so your friend can join.' : (onlineMode && onlineLocked ? 'The other player has the move.' : (computerTurn ? 'The board is locked while the computer chooses.' : 'Choose an available square to play.')));
+    $('turnHint').innerHTML = onlineMode && !onlineReady ? 'Private room<br>Share your invite code.' : (gameType === 'ultimate'
+      ? (activeMiniBoard === null ? 'Free choice<br>Play in any open mini-board.' : `Board ${activeMiniBoard + 1} is active<br>Play inside the highlighted board.`)
+      : 'Every move matters.<br>Plan your next two.');
+    $('playerCardX').classList.toggle('active', gameActive && currentPlayer === 'X');
+    $('playerCardO').classList.toggle('active', gameActive && currentPlayer === 'O');
+    $('playerCardNameX').textContent = getName('X'); $('playerCardNameO').textContent = getName('O');
+    $('playerCardRoleX').textContent = onlineMode ? (onlinePlayer === 'X' ? 'You · Room creator' : 'Room creator') : 'Player one';
+    $('playerCardRoleO').textContent = onlineMode ? (onlinePlayer === 'O' ? 'You · Joined player' : (onlineReady ? 'Online opponent' : 'Waiting for friend')) : (playMode === 'pvc' ? `Computer · ${difficulty}` : 'Player two');
+    $('playerX').value = names.X; $('playerO').value = names.O;
+  }
+  function render() {
+    gameType = $('gameType').value; playMode = $('playMode').value; difficulty = $('difficulty').value;
+    $('normalBoard').hidden = gameType !== 'normal';
+    $('ultimateBoard').hidden = gameType !== 'ultimate';
+    $('difficultyField').classList.toggle('hidden', playMode !== 'pvc' || onlineMode);
+    $('gameType').disabled = onlineMode; $('playMode').disabled = onlineMode; $('difficulty').disabled = onlineMode;
+    $('playerX').disabled = onlineMode; $('playerO').disabled = onlineMode;
+    $('resetScoresButton').disabled = onlineMode;
+    $('boardTitle').textContent = gameType === 'normal' ? 'Classic Tic Tac Toe' : 'Ultimate Tic Tac Toe';
+    $('modePill').textContent = gameType === 'normal' ? 'CLASSIC MODE' : 'ULTIMATE MODE';
+    $('boardTip').textContent = gameType === 'normal'
+      ? 'Tap an empty square. Make a line of three to win.'
+      : 'Your cell sends the next player to the matching mini-board. A closed board gives free choice.';
+    $('rulesTag').textContent = gameType === 'normal' ? 'Classic rules' : 'Ultimate rules';
+    $('howToPlay').children[0].innerHTML = gameType === 'normal'
+      ? '<strong>Classic:</strong> Take turns placing X and O. The first player to make a line of three wins.'
+      : '<strong>Ultimate:</strong> Your move sends your opponent to the mini-board in the same cell position. If that board is already closed, they may choose any open board.';
+    $('howToPlay').children[2].hidden = gameType === 'normal';
+    renderBoardOnly(); renderTurn(); renderStats(); renderScoreboard(); renderHistory(); renderBalance();
+    const canUndo = onlineMode ? onlineCanUndo : historyStack.length > 0;
+    $('undoButton').disabled = !canUndo;
+    $('undoButton').style.opacity = canUndo ? '1' : '.48';
+    $('resetBoardButton').textContent = onlineMode ? (onlineHost ? '↻ New round' : '↻ Host starts next') : '↻ Restart';
+    $('resetBoardButton').disabled = onlineMode && !onlineHost;
+    $('homeButton').textContent = onlineMode ? '⌂ Leave room' : '⌂ Home';
+    updateOnlineBar();
+    $('soundButton').textContent = soundEnabled ? '♪ Sound: On' : '♪ Sound: Off';
+    $('soundButton').setAttribute('aria-pressed', String(soundEnabled));
+  }
+  function toggleSound() {
+    soundEnabled = !soundEnabled; persist(); render(); showToast(soundEnabled ? 'Sound effects enabled.' : 'Sound effects muted.');
+  }
+
+  // Board event delegation keeps the click handling small and works after each re-render.
+  $('normalBoard').addEventListener('click', event => {
+    const cell = event.target.closest('button[data-cell]');
+    if (!cell || cell.disabled) return;
+    makeMove(null, Number(cell.dataset.cell), currentPlayer);
+  });
+  $('ultimateBoard').addEventListener('click', event => {
+    const cell = event.target.closest('button[data-board][data-cell]');
+    if (!cell || cell.disabled) return;
+    makeMove(Number(cell.dataset.board), Number(cell.dataset.cell), currentPlayer);
+  });
+  $('newGameButton').addEventListener('click', resetMatch);
+  $('resetBoardButton').addEventListener('click', resetMatch);
+  $('undoButton').addEventListener('click', undoMove);
+  $('soundButton').addEventListener('click', toggleSound);
+  $('gameType').addEventListener('change', resetMatch);
+  $('playMode').addEventListener('change', resetMatch);
+  $('difficulty').addEventListener('change', () => { difficulty = $('difficulty').value; persist(); render(); });
+  $('theme').addEventListener('change', () => { theme = $('theme').value; applyTheme(); render(); });
+  for (const player of ['X','O']) {
+    $(`player${player}`).addEventListener('change', event => {
+      names[player] = event.target.value.trim().slice(0,18) || `Player ${player}`;
+      persist(); render();
+    });
+    $(`player${player}`).addEventListener('keydown', event => {
+      if (event.key === 'Enter') event.target.blur();
+    });
+  }
+  $('resetScoresButton').addEventListener('click', () => {
+    if (!window.confirm('Reset all saved wins, losses and draws?')) return;
+    scores = {X:0,O:0,draw:0}; gameHistory = []; persist(); render(); showToast('Scoreboard and match history reset.');
+  });
+  $('fullscreenButton').addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (error) { showToast('Fullscreen is not available in this browser.'); }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+    const key = event.key.toLowerCase();
+    if (key === 'n') resetMatch();
+    else if (key === 'u') undoMove();
+    else if (key === 'm') toggleSound();
+    else if (key === 'f') $('fullscreenButton').click();
+  });
+
+  // Landing page and online-room controls.
+  $('homeTheme').addEventListener('change', () => { theme = $('homeTheme').value; applyTheme(); });
+  $('createClassicRoom').addEventListener('click', () => startOnlineCreate('normal'));
+  $('createUltimateRoom').addEventListener('click', () => startOnlineCreate('ultimate'));
+  $('joinRoomButton').addEventListener('click', startOnlineJoin);
+  $('joinRoomCode').addEventListener('input', event => { event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,6); });
+  $('joinRoomCode').addEventListener('keydown', event => { if (event.key === 'Enter') startOnlineJoin(); });
+  $('homeName').addEventListener('change', event => { names.X = event.target.value.trim().slice(0,18) || 'Player X'; persist(); });
+  $('offlineButton').addEventListener('click', () => {
+    clearOnlineSession();
+    $('gameType').value = 'normal'; $('playMode').value = 'pvp'; $('playerX').value = names.X; $('playerO').value = 'Player O'; names.O = 'Player O';
+    showGame(); resetMatch();
+  });
+  $('vsComputerButton').addEventListener('click', () => {
+    clearOnlineSession();
+    $('gameType').value = 'normal'; $('playMode').value = 'pvc'; $('difficulty').value = 'hard';
+    $('playerX').value = names.X; names.O = 'Computer'; $('playerO').value = names.O;
+    showGame(); resetMatch();
+  });
+  $('homeButton').addEventListener('click', returnHome);
+  $('copyInviteButton').addEventListener('click', copyInvite);
+  $('leaveRoomButton').addEventListener('click', leaveOnlineRoom);
+
+  // Keep the visible timer fresh without changing any game state.
+  setInterval(() => { $('elapsedTime').textContent = formatTime(elapsedSeconds()); }, 1000);
+  applyTheme();
+  $('homeTheme').value = theme;
+  $('playerX').value = names.X; $('playerO').value = names.O;
+  $('gameType').value = gameType; $('playMode').value = playMode; $('difficulty').value = difficulty;
+  resetMatch();
+  showHome();
+  const inviteCode = new URLSearchParams(location.search).get('room');
+  if (inviteCode) $('joinRoomCode').value = inviteCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,6);
+  try {
+    const priorSession = JSON.parse(localStorage.getItem(ROOM_SESSION_KEY) || 'null');
+    if (priorSession?.code && priorSession?.token && socket) {
+      onlineMode = true; onlineRoomCode = priorSession.code; onlineToken = priorSession.token;
+      onlinePlayer = priorSession.player; onlineHost = Boolean(priorSession.host);
+      resumingSession = true; socket.connect();
+    }
+  } catch (error) { /* Ignore an unavailable or malformed saved room session. */ }
+})();
+</script>
+</body>
+</html>
